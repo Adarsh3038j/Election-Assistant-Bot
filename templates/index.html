@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-container { width: 100%; max-width: 450px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .chat-header { background: #0056b3; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 18px; }
+        .chat-box { height: 400px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 15px; max-width: 80%; line-height: 1.4; font-size: 14px; }
+        .user-msg { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .bot-msg { background: #e9ecef; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .input-area { display: flex; flex-wrap: wrap; padding: 10px; border-top: 1px solid #ddd; background: #fff; gap: 5px;}
+        
+        /* Language Dropdown ki Styling */
+        select { width: 100%; padding: 8px; margin-bottom: 5px; border-radius: 5px; border: 1px solid #ddd; font-weight: bold; color: #0056b3; outline: none;}
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
+        button { background: #0056b3; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        button:hover { background: #003d82; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">🇮🇳 Election Guide Assistant</div>
+    <div class="chat-box" id="chat-box">
+        <div class="message bot-msg">Namaste! Main aapka Election Assistant hoon. Voting process ya voter ID se juda apna sawaal poochein.</div>
+    </div>
+    <div class="input-area">
+        <select id="language-select">
+            <option value="English">Language: English</option>
+            <option value="Hindi">हिंदी (Hindi)</option>
+            <option value="Marathi">मराठी (Marathi)</option>
+            <option value="Tamil">தமிழ் (Tamil)</option>
+            <option value="Telugu">తెలుగు (Telugu)</option>
+            <option value="Bengali">বাংলা (Bengali)</option>
+        </select>
+        
+        <input type="text" id="user-input" placeholder="Apna sawaal yahan likhein..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    async function sendMessage() {
+        const inputField = document.getElementById("user-input");
+        const languageSelect = document.getElementById("language-select"); // Dropdown ko read karna
+        const message = inputField.value.trim();
+        const selectedLanguage = languageSelect.value; // Chuni hui bhasha nikalna
+
+        if (!message) return;
+
+        appendMessage(message, "user-msg");
+        inputField.value = "";
+
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // Backend ko message ke sath bhasha (language) bhi bhejna
+                body: JSON.stringify({ message: message, language: selectedLanguage }) 
+            });
+            const data = await response.json();
+            
+            if(data.response) {
+                appendMessage(data.response, "bot-msg");
+            } else {
+                appendMessage("Sorry, kuch error aa gaya.", "bot-msg");
+            }
+        } catch (error) {
+            appendMessage("Server se connect nahi ho paaya.", "bot-msg");
+        }
+    }
+
+    function appendMessage(text, className) {
+        const chatBox = document.getElementById("chat-box");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${className}`;
+        msgDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === "Enter") sendMessage();
+    }
+</script>
+
+</body>
+</html>
